@@ -4,7 +4,8 @@ let fetch = require('node-fetch')                                    // node onl
 let { TextEncoder, TextDecoder } = require('util')                   // node only; native TextEncoder/Decoder
 let { map } = require('p-iteration')
 let colors = require('colors')
-let dateFormat = require('dateformat');
+let dateFormat = require('dateformat')
+let fs = require('fs')
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create()
 
 // all keys in the git repo are only used for testing purposes
@@ -40,6 +41,13 @@ let eos_usd = [
 ]
 
 // methods
+
+function save(date) {
+	let contents = date.getTime().toString()
+	fs.writeFileSync("update.txt", contents, (e) => {
+		if (e) { console.log(`Error saving file: ${e.message}`.red) }
+	})
+}
 
 function getApi(url) {
 	let rpc = new JsonRpc(url, { fetch })
@@ -82,7 +90,7 @@ async function getPrices(providers) {
 }
 
 async function pushRun(url) {
-	console.log(`Pushing run`)
+	console.log(`Pushing run`.green)
 	try {
 		let api = getApi(url)
 		let result = await api.transact({
@@ -117,15 +125,16 @@ async function pushUpdate(price, url) {
 
 // entry point
 
-let minutes = 10
+let minutes = 5
 let interval = minutes * 60 * 1000
 setInterval(collect, interval)
 collect()
 
 async function collect() {
 
+	let date = new Date()
 	console.log(`\nStarting…`.green)
-	console.log(dateFormat(new Date(), "H:MM:ss, mmmm dS yyyy").green)
+	console.log(dateFormat(date, "H:MM:ss, mmmm dS yyyy").green)
 
 	let btcusd_result = await getPrices(btc_usd)
 	let eosbtc_result = await getPrices(eos_btc)
@@ -142,11 +151,14 @@ async function collect() {
 	let updateId = await pushUpdate(prepared, endpoints[0])
 
 	if (updateId !== undefined) {
-		console.log(`Transaction id: ${updateId}\n`.white)
+		console.log(`Transaction id: ${updateId}`.white)
 
 		let runId = await pushRun(endpoints[0])
 		if (runId !== undefined) {
-			console.log(`Transaction id: ${runId}\n`.white)
+			console.log(`Transaction id: ${runId}`.white)
 		}
 	}
+
+	save(date)
+	console.log("\n\n")
 }
