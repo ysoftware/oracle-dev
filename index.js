@@ -8,12 +8,9 @@ let dateFormat = require('dateformat')
 let fs = require('fs')
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create()
 
-// all keys in the git repo are only used for testing purposes
-// EOS5THAacdY2ucYXMzjRLk81SY2JuJMtrjtZtgRSPxeyDrGhfQcDE
-// 5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx
-
 let defaultPrivateKey = "5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx"
 let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
+let interval = 10 * 60 * 1000
 
 // data
 
@@ -42,7 +39,14 @@ let eos_usd = [
 
 // methods
 
-function save(date) {
+function loadTime() {
+	let contents = fs.readFileSync("update.txt", 'utf8')
+	let time = parseInt(contents)
+	if (time === NaN) { console.log(`Could not parse file: ${e.message}`.red); return 0 }
+	return time
+}
+
+function saveTime(date) {
 	let contents = date.getTime().toString()
 	fs.writeFileSync("update.txt", contents, (e) => {
 		if (e) { console.log(`Error saving file: ${e.message}`.red) }
@@ -125,13 +129,19 @@ async function pushUpdate(price, url) {
 
 // entry point
 
-let minutes = 5
-let interval = minutes * 60 * 1000
-setInterval(collect, interval)
-collect()
+async function main() {
+	let deltaTime = new Date().getTime() - loadTime()
+	let delay = Math.max(0, Math.min(interval, interval - deltaTime))
+	console.log(`Restarting with initial delay: ${delay}`.blue)
+	setTimeout(init, delay)
+}
+
+async function init() {
+	setInterval(collect, interval)
+	collect()
+}
 
 async function collect() {
-
 	let date = new Date()
 	console.log(`\nStarting…`.green)
 	console.log(dateFormat(date, "H:MM:ss, mmmm dS yyyy").green)
@@ -159,6 +169,8 @@ async function collect() {
 		}
 	}
 
-	save(date)
+	saveTime(date)
 	console.log("\n\n")
 }
+
+main()
