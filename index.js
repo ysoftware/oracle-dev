@@ -10,34 +10,13 @@ require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create(
 
 let defaultPrivateKey = "5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx"
 let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
-let interval = 10 * 60 * 1000
+let interval = 1 * 60 * 1000
+let endpoints = loadEndpoints()
 
-// data
-
-let endpoints = [
-	"http://jungle2.cryptolions.io"
-]
-
-let btc_usd = [
-	["https://www.bitinka.com/api/apinka/ticker/BTC_USD?format=json", "USD/0/lastPrice"],
-	["https://api.pro.coinbase.com/products/BTC-USD/ticker", "price"],
-	["https://it.bitstamp.net/api/v2/ticker/btcusd", "last"],
-	["https://api.gemini.com/v1/pubticker/btcusd", "last"],
-	["https://data.messari.io/api/v1/assets/btc/metrics", "data/market_data/price_usd"]
-]
-
-let eos_btc = [
-	["https://poloniex.com/public?command=returnTicker", "BTC_EOS/last"],
-	["https://api.binance.com/api/v1/ticker/24hr?symbol=EOSBTC", "lastPrice"]
-]
-
-let eos_usd = [
-	["https://www.bitinka.com/api/apinka/ticker/EOS_USD?format=json", "EOS/0/lastPrice"],
-	["https://api.kraken.com/0/public/Ticker?pair=EOSUSD", "result/EOSUSD/c/0"],
-	["https://api.pro.coinbase.com/products/EOS-USD/ticker", "price"]
-]
-
-// methods
+function loadEndpoints() {
+	let contents = fs.readFileSync("endpoints.json", 'utf8')
+	return JSON.parse(contents)
+}
 
 function loadTime() {
 	let contents = fs.readFileSync("update.txt", 'utf8')
@@ -130,6 +109,7 @@ async function pushUpdate(price, url) {
 // entry point
 
 async function main() {
+	loadEndpoints()
 	let deltaTime = new Date().getTime() - loadTime()
 	let delay = Math.max(0, Math.min(interval, interval - deltaTime))
 	console.log(`Restarting with initial delay: ${delay}`.blue)
@@ -146,9 +126,9 @@ async function collect() {
 	console.log(`\nStarting…`.green)
 	console.log(dateFormat(date, "H:MM:ss, mmmm dS yyyy").green)
 
-	let btcusd_result = await getPrices(btc_usd)
-	let eosbtc_result = await getPrices(eos_btc)
-	let eosusd_result = await getPrices(eos_usd)
+	let btcusd_result = await getPrices(endpoints.btc_usd)
+	let eosbtc_result = await getPrices(endpoints.eos_btc)
+	let eosusd_result = await getPrices(endpoints.eos_usd)
 
 	let btcusd = median(btcusd_result)
 	let eosbtc = median(eosbtc_result)
@@ -158,12 +138,12 @@ async function collect() {
 	console.log(`Fetched price: ${result}`.blue)
 
 	let prepared = parseInt(result * 100)
-	let updateId = await pushUpdate(prepared, endpoints[0])
+	let updateId = await pushUpdate(prepared, endpoints.eos[0])
 
 	if (updateId !== undefined) {
 		console.log(`Transaction id: ${updateId}`.white)
 
-		let runId = await pushRun(endpoints[0])
+		let runId = await pushRun(endpoints.eos[0])
 		if (runId !== undefined) {
 			console.log(`Transaction id: ${runId}`.white)
 		}
