@@ -4,6 +4,7 @@ let fetch = require('node-fetch')                                    // node onl
 let { TextEncoder, TextDecoder } = require('util')                   // node only; native TextEncoder/Decoder
 let { map } = require('p-iteration')
 let colors = require('colors')
+let dateFormat = require('dateformat');
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create()
 
 // data
@@ -95,11 +96,12 @@ async function pushUpdate(price, url) {
 let minutes = 10
 let interval = minutes * 60 * 1000
 setInterval(collect, interval)
+collect()
 
 async function collect() {
 
 	console.log(`\nStarting…`.green)
-	console.log(new Date().toISOString().green)
+	console.log(dateFormat(new Date(), "H:MM:ss, mmmm dS yyyy").green)
 
 	let btcusd_result = await getPrices(btc_usd)
 	let eosbtc_result = await getPrices(eos_btc)
