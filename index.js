@@ -43,13 +43,13 @@ function median(values) {
 
 async function getPrice(provider) {
 	try { return unpack(await download(provider[0]), provider[1]) }
-	catch (e) { console.log(e.message.yellow); return undefined }
+	catch (e) { console.log(`Transaction failed: ${e.message}`.red); return undefined }
 }
 
 async function download(url) {
 	if (url === undefined) { return undefined }
 	try { return await (await fetch(url)).json() }
-	catch (e) { console.log(e.message.gray); return undefined }
+	catch (e) { console.log(`Downloading: ${url}`.gray); console.log(`Error: ${e.message}`.yellow); return undefined }
 }
 
 async function unpack(object, path) {
@@ -60,7 +60,7 @@ async function unpack(object, path) {
 		for (i in turns) { value = value[turns[i]] }
 		return parseFloat(value)
 	}
-	catch (e) { console.log(`Could not unpack object: ${e.message}`.gray); return undefined }
+	catch (e) { console.log(`Unpack error: ${e.message}`.yellow); console.log(object); return undefined }
 }
 
 async function getPrices(providers) {
@@ -69,13 +69,13 @@ async function getPrices(providers) {
 }
 
 async function pushUpdate(price, url) {
-	let defaultPrivateKey = "5KWRLo1bkuoM9yUshYv8ARapjZPDpcNrbSzEPk4S7VsmrWevmZv"
-	let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
-
-	let rpc = new JsonRpc(url, { fetch })
-	let api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
-
 	try {
+		let defaultPrivateKey = "5KWRLo1bkuoM9yUshYv8ARapjZPDpcNrbSzEPk4S7VsmrWevmZv"
+		let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
+
+		let rpc = new JsonRpc(url, { fetch })
+		let api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
+
 		console.log(`Pushing price: ${price}`.green)
 		let result = await api.transact({
 			actions: [{ account: 'scrugeosbuck', name: 'update', 
@@ -92,11 +92,9 @@ async function pushUpdate(price, url) {
 
 // entry point
 
-let minutes = 1
+let minutes = 10
 let interval = minutes * 60 * 1000
-// setInterval(collect, interval)
-
-collect()
+setInterval(collect, interval)
 
 async function collect() {
 
@@ -112,13 +110,12 @@ async function collect() {
 	let eosusd = median(eosusd_result)
 
 	let result = median([btcusd * eosbtc, eosusd])
-	console.log(`Fetched price: ${result}`.green)
+	console.log(`Fetched price: ${result}`.blue)
 
 	let prepared = parseInt(result * 100)
 	let transaction_id = await pushUpdate(prepared, endpoints[0])
 
 	if (transaction_id !== undefined) {
-		console.log(`Transaction id: ${transaction_id}`.blue)
-		console.log("\n")
+		console.log(`Transaction id: ${transaction_id}\n`.white)
 	}
 }
