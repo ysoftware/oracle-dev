@@ -7,6 +7,13 @@ let colors = require('colors')
 let dateFormat = require('dateformat');
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create()
 
+// all keys in the git repo are only used for testing purposes
+// EOS5THAacdY2ucYXMzjRLk81SY2JuJMtrjtZtgRSPxeyDrGhfQcDE
+// 5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx
+
+let defaultPrivateKey = "5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx"
+let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
+
 // data
 
 let endpoints = [
@@ -33,6 +40,11 @@ let eos_usd = [
 ]
 
 // methods
+
+function getApi(url) {
+	let rpc = new JsonRpc(url, { fetch })
+	return new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
+}
 
 function median(values) {
 	if (values.length === 0) return 0
@@ -69,18 +81,30 @@ async function getPrices(providers) {
 		.filter(element => { return element !== undefined })
 }
 
-async function pushUpdate(price, url) {
+async function pushRun(url) {
+	console.log(`Pushing run`)
 	try {
-		let defaultPrivateKey = "5KWRLo1bkuoM9yUshYv8ARapjZPDpcNrbSzEPk4S7VsmrWevmZv"
-		let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
+		let api = getApi(url)
+		let result = await api.transact({
+			actions: [{ account: 'scrugeosbuck', name: 'run', 
+				authorization: [{ actor: 'scrugeoracle', permission: 'active' }],
+			data: { max: 50 },
+			}]}, { blocksBehind: 3, expireSeconds: 30 })
+		return result.transaction_id
+	}
+	catch (exception) {
+		console.error(`Transaction error: ${exception.message}`.red)
+		return undefined
+	}
+}
 
-		let rpc = new JsonRpc(url, { fetch })
-		let api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
-
-		console.log(`Pushing price: ${price}`.green)
+async function pushUpdate(price, url) {
+	console.log(`Pushing price: ${price}`.green)
+	try {
+		let api = getApi(url)
 		let result = await api.transact({
 			actions: [{ account: 'scrugeosbuck', name: 'update', 
-				authorization: [{actor: 'scrugeosbuck', permission: 'oracle', }],	
+				authorization: [{ actor: 'scrugeosbuck', permission: 'oracle' }],
 			data: { eos_price: 10000 },
 			}]}, { blocksBehind: 3, expireSeconds: 30 })
 		return result.transaction_id
@@ -115,9 +139,14 @@ async function collect() {
 	console.log(`Fetched price: ${result}`.blue)
 
 	let prepared = parseInt(result * 100)
-	let transaction_id = await pushUpdate(prepared, endpoints[0])
+	let updateId = await pushUpdate(prepared, endpoints[0])
 
-	if (transaction_id !== undefined) {
-		console.log(`Transaction id: ${transaction_id}\n`.white)
+	if (updateId !== undefined) {
+		console.log(`Transaction id: ${updateId}\n`.white)
+
+		let runId = await pushRun(endpoints[0])
+		if (runId !== undefined) {
+			console.log(`Transaction id: ${runId}\n`.white)
+		}
 	}
 }
