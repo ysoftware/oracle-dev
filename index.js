@@ -112,7 +112,7 @@ async function collect() {
 	let eosbtc = median(eosbtc_result)
 	let eosusd = median(eosusd_result)
 	let result = median([btcusd * eosbtc, eosusd])
-	let price = parseInt(result * 100)
+	let price = Math.round(result * 100)
 
 	if (isValid(price)) {
 		console.log(`Fetched price: ${price} (${result})\n`.blue)
