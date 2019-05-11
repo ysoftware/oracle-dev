@@ -108,6 +108,8 @@ async function collect() {
 	let eosbtc_result = await getPrices(endpoints.eos_btc)
 	let eosusd_result = await getPrices(endpoints.eos_usd)
 
+	let count = btcusd_result.length + eosbtc_result.length + eosusd_result.length
+
 	let btcusd = median(btcusd_result)
 	let eosbtc = median(eosbtc_result)
 	let eosusd = median(eosusd_result)
@@ -115,7 +117,7 @@ async function collect() {
 	let price = Math.round(result * 100)
 
 	if (isValid(price)) {
-		console.log(`Fetched price: ${price} (${result})\n`.blue)
+		console.log(`Fetched ${count} prices: ${price} (${result})\n`.blue)
 		try {
 			let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price })
 			saveTime(date)
