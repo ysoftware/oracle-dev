@@ -78,37 +78,24 @@ async function getPrices(providers) {
 		.filter(element => { return element !== undefined })
 }
 
-async function pushRun(endpoint, data) {
-	console.log(`Pushing run @ ${endpoint}…`.green)
-
-	let api = getApi(endpoint)
-	let result = await api.transact({
-		actions: [{ account: 'scrugeosbuck', name: 'run',
-			authorization: [{ actor: 'scrugeoracle', permission: 'active' }],
-		data: { max: 50 },
-		}]}, { blocksBehind: 3, expireSeconds: 15 })
-	return result.transaction_id
-}
-
-async function pushUpdate(endpoint, data) {
-	console.log(`Pushing update with price: ${data} @ ${endpoint}…`.green)
-
-	let api = getApi(endpoint)
-	let result = await api.transact({
-		actions: [{ account: 'scrugeosbuck', name: 'update',
-			authorization: [{ actor: 'scrugeosbuck', permission: 'oracle' }],
-		data: { eos_price: data },
-		}]}, { blocksBehind: 3, expireSeconds: 15 })
-	return result.transaction_id
-}
-
-async function tryTransaction(func, data=undefined, endpoint=0) {
+async function tryTransaction(action, actor, permission, data, endpoint=0) {
 	let url = endpoints.eos[endpoint]
+	console.log(`Pushing ${action} @ ${url}…`.green)
 	if (url === undefined) { throw Error("Transaction failed on all endpoints") }
-	try { return await func.call(null, url, data) }
+	try {
+		let api = getApi(url)
+		let result = await api.transact({
+			actions: [{ account: 'scrugeosbuck', name: action,
+				authorization: [{ actor: actor, permission: permission }],
+			data: data,
+			}]}, { blocksBehind: 3, expireSeconds: 15 })
+		console.log(`Transaction id: ${result.transaction_id}`.white)
+		console.log(`CPU usage: ${result.processed.receipt.cpu_usage_us} μs\n`.gray)
+		return result
+	}
 	catch (e) {
 		console.error(`Transaction error: "${e.message}"`.yellow)
-		return tryTransaction(func, data, endpoint+1)
+		return tryTransaction(action, actor, permission, data, endpoint+1)
 	}
 }
 
@@ -128,15 +115,13 @@ async function collect() {
 	let price = parseInt(result * 100)
 
 	if (isValid(price)) {
-		console.log(`Fetched price: ${result}\n`.blue)
+		console.log(`Fetched price: ${price} (${result})\n`.blue)
 		try {
-			let updateId = await tryTransaction(pushUpdate, price)
-			console.log(`Transaction id: ${updateId}\n`.white)
+			let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price })
 			saveTime(date)
 
 			try {
-				let runId = await await tryTransaction(pushRun)
-				console.log(`Transaction id: ${runId}\n`.white)
+				let runResult = await tryTransaction('run', 'scrugeoracle', 'active', { max: 50 })
 				console.log("Update complete.".green)
 			}
 			catch (e) { console.log(`\nUpdate went through, but run action failed: "${e.message}".`.yellow) }
