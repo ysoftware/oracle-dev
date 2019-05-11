@@ -145,7 +145,7 @@ async function collect() {
 	}
 	else { console.log(`Price fetch completely failed: "${price}".`.red) }
 
-	console.log("________________________________________________________________________________\n\n".green)
+	console.log("________________________________________________________________________________".green)
 }
 
 async function init() {

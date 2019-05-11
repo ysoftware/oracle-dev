@@ -29,7 +29,6 @@
 	"btc_usd": [
 		["https://www.bitinka.com/api/apinka/ticker/BTC_USD?format=json", "USD/0/lastPrice"],
 		["https://api.pro.coinbase.com/products/BTC-USD/ticker", "price"],
-		["https://it.bitstamp.net/api/v2/ticker/btcusd", "last"],
 		["https://api.gemini.com/v1/pubticker/btcusd", "last"],
 		["https://data.messari.io/api/v1/assets/btc/metrics", "data/market_data/price_usd"]
 	],
