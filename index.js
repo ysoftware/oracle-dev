@@ -10,7 +10,7 @@ require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create(
 
 let defaultPrivateKey = "5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx"
 let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
-let interval = 1 * 60 * 1000
+let interval = 10 * 60 * 1000
 let endpoints = loadEndpoints()
 
 function loadEndpoints() {
@@ -106,21 +106,6 @@ async function tryTransaction(func, data=undefined, endpoint=0) {
 	}
 }
 
-// entry point
-
-async function main() {
-	loadEndpoints()
-	let deltaTime = new Date().getTime() - loadTime()
-	let delay = Math.max(0, Math.min(interval, interval - deltaTime))
-	console.log(`Restarting with initial delay: ${parseInt(delay / 1000)} sec…`.blue)
-	setTimeout(init, delay)
-}
-
-async function init() {
-	setInterval(collect, interval)
-	collect()
-}
-
 async function collect() {
 	let date = new Date()
 	console.log(`\nStarting…`.green)
@@ -155,9 +140,22 @@ async function collect() {
 		}
 	}
 	catch (e) {
-		console.log(`Update failed: "${e.message}".`.red)
+		console.log(`Update completely failed: "${e.message}".`.red)
 	}
-	console.log("\n\n")
+	console.log("________________________________________________________________________________\n\n".green)
+}
+
+async function init() {
+	setInterval(collect, interval)
+	collect()
+}
+
+async function main() {
+	loadEndpoints()
+	let deltaTime = new Date().getTime() - loadTime()
+	let delay = Math.max(0, Math.min(interval, interval - deltaTime))
+	console.log(`Restarting with initial delay: ${parseInt(delay / 1000)} sec…`.blue)
+	setTimeout(init, delay)
 }
 
 main()
