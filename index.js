@@ -47,13 +47,13 @@ function median(values) {
 
 async function getPrice(provider) {
 	try { return unpack(await download(provider[0]), provider[1]) }
-	catch (e) { console.log(`Transaction failed: ${e.message}`.red); return undefined }
+	catch (e) { console.log(`Transaction failed: "${e.message}"`.red); return undefined }
 }
 
 async function download(url) {
 	if (url === undefined) { return undefined }
 	try { return await (await fetch(url)).json() }
-	catch (e) { console.log(`Downloading: ${url}`.gray); console.log(`Error: ${e.message}`.yellow); return undefined }
+	catch (e) { console.log(`Downloading: ${url}`.gray); console.log(`Error: "${e.message}"`.yellow); return undefined }
 }
 
 async function unpack(object, path) {
@@ -64,7 +64,7 @@ async function unpack(object, path) {
 		for (i in turns) { value = value[turns[i]] }
 		return parseFloat(value)
 	}
-	catch (e) { console.log(`Unpack error: ${e.message}`.yellow); console.log(object); return undefined }
+	catch (e) { console.log(`Unpack error: "${e.message}"`.yellow); console.log(object); return undefined }
 }
 
 async function getPrices(providers) {
@@ -72,37 +72,37 @@ async function getPrices(providers) {
 		.filter(element => { return element !== undefined })
 }
 
-async function pushRun(url) {
-	console.log(`Pushing run`.green)
-	try {
-		let api = getApi(url)
-		let result = await api.transact({
-			actions: [{ account: 'scrugeosbuck', name: 'run', 
-				authorization: [{ actor: 'scrugeoracle', permission: 'active' }],
-			data: { max: 50 },
-			}]}, { blocksBehind: 3, expireSeconds: 30 })
-		return result.transaction_id
-	}
-	catch (exception) {
-		console.error(`Transaction error: ${exception.message}`.red)
-		return undefined
-	}
+async function pushRun(endpoint, data) {
+	console.log(`Pushing run @ ${endpoint}…`.green)
+
+	let api = getApi(endpoint)
+	let result = await api.transact({
+		actions: [{ account: 'scrugeosbuck', name: 'run',
+			authorization: [{ actor: 'scrugeoracle', permission: 'active' }],
+		data: { max: 50 },
+		}]}, { blocksBehind: 3, expireSeconds: 15 })
+	return result.transaction_id
 }
 
-async function pushUpdate(price, url) {
-	console.log(`Pushing price: ${price}`.green)
-	try {
-		let api = getApi(url)
-		let result = await api.transact({
-			actions: [{ account: 'scrugeosbuck', name: 'update', 
-				authorization: [{ actor: 'scrugeosbuck', permission: 'oracle' }],
-			data: { eos_price: 10000 },
-			}]}, { blocksBehind: 3, expireSeconds: 30 })
-		return result.transaction_id
-	}
-	catch (exception) {
-		console.error(`Transaction error: ${exception.message}`.red)
-		return undefined
+async function pushUpdate(endpoint, data) {
+	console.log(`Pushing update with price: ${data} @ ${endpoint}…`.green)
+
+	let api = getApi(endpoint)
+	let result = await api.transact({
+		actions: [{ account: 'scrugeosbuck', name: 'update',
+			authorization: [{ actor: 'scrugeosbuck', permission: 'oracle' }],
+		data: { eos_price: data },
+		}]}, { blocksBehind: 3, expireSeconds: 15 })
+	return result.transaction_id
+}
+
+async function tryTransaction(func, data=undefined, endpoint=0) {
+	let url = endpoints.eos[endpoint]
+	if (url === undefined) { throw Error("Transaction failed on all endpoints") }
+	try { return await func.call(null, url, data) }
+	catch (e) {
+		console.error(`Transaction error: "${e.message}"`.yellow)
+		return tryTransaction(func, data, endpoint+1)
 	}
 }
 
@@ -112,7 +112,7 @@ async function main() {
 	loadEndpoints()
 	let deltaTime = new Date().getTime() - loadTime()
 	let delay = Math.max(0, Math.min(interval, interval - deltaTime))
-	console.log(`Restarting with initial delay: ${delay}`.blue)
+	console.log(`Restarting with initial delay: ${parseInt(delay / 1000)} sec…`.blue)
 	setTimeout(init, delay)
 }
 
@@ -135,21 +135,28 @@ async function collect() {
 	let eosusd = median(eosusd_result)
 
 	let result = median([btcusd * eosbtc, eosusd])
-	console.log(`Fetched price: ${result}`.blue)
+	console.log(`Fetched price: ${result}\n`.blue)
 
-	let prepared = parseInt(result * 100)
-	let updateId = await pushUpdate(prepared, endpoints.eos[0])
+	let price = parseInt(result * 100)
 
-	if (updateId !== undefined) {
-		console.log(`Transaction id: ${updateId}`.white)
+	try {
+		let updateId = await tryTransaction(pushUpdate, price)
+		console.log(`Transaction id: ${updateId}\n`.white)
 
-		let runId = await pushRun(endpoints.eos[0])
-		if (runId !== undefined) {
-			console.log(`Transaction id: ${runId}`.white)
+		saveTime(date)
+
+		try {
+			let runId = await await tryTransaction(pushRun)
+			console.log(`Transaction id: ${runId}\n`.white)
+			console.log("Update complete.".green)
+		}
+		catch (e) {
+			console.log(`\nUpdate went through, but run action failed: "${e.message}".`.yellow)
 		}
 	}
-
-	saveTime(date)
+	catch (e) {
+		console.log(`Update failed: "${e.message}".`.red)
+	}
 	console.log("\n\n")
 }
 
