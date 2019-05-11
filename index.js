@@ -13,6 +13,10 @@ let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
 let interval = 10 * 60 * 1000
 let endpoints = loadEndpoints()
 
+function isValid(number) {
+	return !isNaN(number) && number !== undefined && number !== null
+}
+
 function loadEndpoints() {
 	let contents = fs.readFileSync("endpoints.json", 'utf8')
 	return JSON.parse(contents)
@@ -37,9 +41,11 @@ function getApi(url) {
 	return new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() })
 }
 
-function median(values) {
-	if (values.length === 0) return 0
-	values.sort((a, b) => { return a - b })
+function median(v) {
+	values = v
+		.filter(number => { return isValid(number) })
+		.sort((a, b) => { return a - b })
+	if (values.length === 0) return undefined
 	var half = Math.floor(values.length / 2)
 	if (values.length % 2) return values[half]
 	return (values[half - 1] + values[half]) / 2.0
@@ -118,30 +124,27 @@ async function collect() {
 	let btcusd = median(btcusd_result)
 	let eosbtc = median(eosbtc_result)
 	let eosusd = median(eosusd_result)
-
 	let result = median([btcusd * eosbtc, eosusd])
-	console.log(`Fetched price: ${result}\n`.blue)
-
 	let price = parseInt(result * 100)
 
-	try {
-		let updateId = await tryTransaction(pushUpdate, price)
-		console.log(`Transaction id: ${updateId}\n`.white)
-
-		saveTime(date)
-
+	if (isValid(price)) {
+		console.log(`Fetched price: ${result}\n`.blue)
 		try {
-			let runId = await await tryTransaction(pushRun)
-			console.log(`Transaction id: ${runId}\n`.white)
-			console.log("Update complete.".green)
+			let updateId = await tryTransaction(pushUpdate, price)
+			console.log(`Transaction id: ${updateId}\n`.white)
+			saveTime(date)
+
+			try {
+				let runId = await await tryTransaction(pushRun)
+				console.log(`Transaction id: ${runId}\n`.white)
+				console.log("Update complete.".green)
+			}
+			catch (e) { console.log(`\nUpdate went through, but run action failed: "${e.message}".`.yellow) }
 		}
-		catch (e) {
-			console.log(`\nUpdate went through, but run action failed: "${e.message}".`.yellow)
-		}
+		catch (e) { console.log(`Update completely failed: "${e.message}".`.red) }
 	}
-	catch (e) {
-		console.log(`Update completely failed: "${e.message}".`.red)
-	}
+	else { console.log(`Price fetch completely failed: "${price}".`.red) }
+
 	console.log("________________________________________________________________________________\n\n".green)
 }
 
