@@ -81,7 +81,7 @@ async function getPrices(providers) {
 async function tryTransaction(action, actor, permission, data, endpoint=0) {
 	let url = endpoints.eos[endpoint]
 	console.log(`Pushing ${action} @ ${url}…`.green)
-	if (url === undefined) { throw Error("Transaction failed on all endpoints") }
+	if (url === undefined) { return Error("Transaction failed on all endpoints") }
 	try {
 		let api = getApi(url)
 		let result = await api.transact({
@@ -118,17 +118,21 @@ async function collect() {
 
 	if (isValid(price)) {
 		console.log(`Fetched ${count} prices: ${price} (${result})\n`.blue)
-		try {
-			let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price })
-			saveTime(date)
 
-			try {
-				let runResult = await tryTransaction('run', 'scrugeoracle', 'active', { max: 50 })
-				console.log("Update complete.".green)
-			}
-			catch (e) { console.log(`\nUpdate went through, but run action failed: "${e.message}".`.yellow) }
+		let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price, force: false })
+		if (updateResult instanceof Error) {
+			console.log(`Update completely failed: "${updateResult.message}".`.red)
+			return
 		}
-		catch (e) { console.log(`Update completely failed: "${e.message}".`.red) }
+
+		saveTime(date)
+
+		let runResult = await tryTransaction('run', 'scrugeoracle', 'active', { max: 50 })
+		if (runResult instanceof Error) {
+			console.log(`\nUpdate went through, but run action failed: "${runResult.message}".`.yellow)
+			return
+		}
+		console.log("Update complete.".green)
 	}
 	else { console.log(`Price fetch completely failed: "${price}".`.red) }
 
