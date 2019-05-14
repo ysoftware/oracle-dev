@@ -70,7 +70,7 @@ async function unpack(object, path) {
 		for (i in turns) { value = value[turns[i]] }
 		return parseFloat(value)
 	}
-	catch (e) { console.log(`Unpack error: "${e.message}"`.yellow); console.log(object); return undefined }
+	catch (e) { console.log(`Unpack error: "${e.message}"`.yellow); console.log("Object in question:".yellow); console.log(object); console.log("\n"); return undefined }
 }
 
 async function getPrices(providers) {
