@@ -119,7 +119,7 @@ async function collect() {
 	if (isValid(price)) {
 		console.log(`Fetched ${count} prices: ${price} (${result})\n`.blue)
 
-		let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price, force: false })
+		let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price })
 		if (updateResult instanceof Error) {
 			console.log(`Update completely failed: "${updateResult.message}".`.red)
 			return
