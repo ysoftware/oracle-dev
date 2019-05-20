@@ -8,7 +8,8 @@ let dateFormat = require('dateformat')
 let fs = require('fs')
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create()
 
-let defaultPrivateKey = "5JBfxHwj6VLAGRiQetZxH672EhJx1rKNBHZrUo1Dy4miEbxfHAx"
+// EOS5y6r4yQvT6MTUVNDx1S5V4QVaV5NkmB88pVREqBbYtTneH8oQ4
+let defaultPrivateKey = ""
 let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
 let interval = 10 * 60 * 1000
 let endpoints = loadEndpoints()
