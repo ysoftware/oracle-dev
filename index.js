@@ -9,6 +9,7 @@ let fs = require('fs')
 require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create()
 
 // EOS5y6r4yQvT6MTUVNDx1S5V4QVaV5NkmB88pVREqBbYtTneH8oQ4
+let contract = "buckprotocol"
 let defaultPrivateKey = ""
 let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
 let interval = 10 * 60 * 1000
@@ -86,7 +87,7 @@ async function tryTransaction(action, actor, permission, data, endpoint=0) {
 	try {
 		let api = getApi(url)
 		let result = await api.transact({
-			actions: [{ account: 'scrugeosbuck', name: action,
+			actions: [{ account: buckprotocol, name: action,
 				authorization: [{ actor: actor, permission: permission }],
 			data: data,
 			}]}, { blocksBehind: 3, expireSeconds: 15 })
@@ -120,7 +121,7 @@ async function collect() {
 	if (isValid(price)) {
 		console.log(`Fetched ${count} prices: ${price} (${result})\n`.blue)
 
-		let updateResult = await tryTransaction('update', 'scrugeosbuck', 'oracle', { eos_price: price })
+		let updateResult = await tryTransaction('update', buckprotocol, 'oracle', { eos_price: price })
 		if (updateResult instanceof Error) {
 			console.log(`Update completely failed: "${updateResult.message}".`.red)
 			return
