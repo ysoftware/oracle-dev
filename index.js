@@ -12,7 +12,7 @@ require('https').globalAgent.options.ca = require('ssl-root-cas/latest').create(
 let contract = "buckprotocol"
 let defaultPrivateKey = ""
 let signatureProvider = new JsSignatureProvider([defaultPrivateKey])
-let interval = 10 * 60 * 1000
+let interval = 5 * 60 * 1000
 let endpoints = loadEndpoints()
 
 function isValid(number) {
