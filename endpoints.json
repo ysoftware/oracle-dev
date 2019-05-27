@@ -1,26 +1,30 @@
 {
-	"eos": [
-		"https://eos.greymass.com:443",
-		"https://api.main.alohaeos.com:443",
-		"http://bp.cryptolions.io:8888",
-		"https://api.eosnewyork.io"
-	],
+    "eos": [
+        "https://eos.greymass.com:443",
+        "https://api.main.alohaeos.com:443",
+        "http://bp.cryptolions.io:8888",
+        "https://api.eosnewyork.io"
+    ],
+    
+     "btc_usd": [
+        ["https://www.bitinka.com/api/apinka/ticker/BTC_USD?format=json", "USD/0/lastPrice"],
+        ["https://api.pro.coinbase.com/products/BTC-USD/ticker", "price"],
+        ["https://api.gemini.com/v1/pubticker/btcusd", "last"],
+        ["https://data.messari.io/api/v1/assets/btc/metrics", "data/market_data/price_usd"],
+        ["https://api.binance.com/api/v1/ticker/24hr?symbol=BTCUSDC", "lastPrice"],
+        ["https://api.binance.com/api/v1/ticker/24hr?symbol=BTCPAX", "lastPrice"]
+    ],
 
-	"btc_usd": [
-		["https://www.bitinka.com/api/apinka/ticker/BTC_USD?format=json", "USD/0/lastPrice"],
-		["https://api.pro.coinbase.com/products/BTC-USD/ticker", "price"],
-		["https://api.gemini.com/v1/pubticker/btcusd", "last"],
-		["https://data.messari.io/api/v1/assets/btc/metrics", "data/market_data/price_usd"]
-	],
+    "eos_btc": [
+        ["https://poloniex.com/public?command=returnTicker", "BTC_EOS/last"],
+        ["https://api.binance.com/api/v1/ticker/24hr?symbol=EOSBTC", "lastPrice"]
+    ],
 
-	"eos_btc": [
-		["https://poloniex.com/public?command=returnTicker", "BTC_EOS/last"],
-		["https://api.binance.com/api/v1/ticker/24hr?symbol=EOSBTC", "lastPrice"]
-	],
-
-	"eos_usd": [
-		["https://www.bitinka.com/api/apinka/ticker/EOS_USD?format=json", "EOS/0/lastPrice"],
-		["https://api.kraken.com/0/public/Ticker?pair=EOSUSD", "result/EOSUSD/c/0"],
-		["https://api.pro.coinbase.com/products/EOS-USD/ticker", "price"]
-	]
+    "eos_usd": [
+        ["https://www.bitinka.com/api/apinka/ticker/EOS_USD?format=json", "EOS/0/lastPrice"],
+        ["https://api.kraken.com/0/public/Ticker?pair=EOSUSD", "result/EOSUSD/c/0"],
+        ["https://api.pro.coinbase.com/products/EOS-USD/ticker", "price"],
+        ["https://api.binance.com/api/v1/ticker/24hr?symbol=EOSUSDC", "lastPrice"],
+        ["https://api.binance.com/api/v1/ticker/24hr?symbol=EOSPAX", "lastPrice"]
+    ]
 }
