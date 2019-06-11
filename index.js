@@ -87,7 +87,7 @@ async function tryTransaction(action, actor, permission, data, endpoint=0) {
 	try {
 		let api = getApi(url)
 		let result = await api.transact({
-			actions: [{ account: buckprotocol, name: action,
+			actions: [{ account: contract, name: action,
 				authorization: [{ actor: actor, permission: permission }],
 			data: data,
 			}]}, { blocksBehind: 3, expireSeconds: 15 })
@@ -121,7 +121,7 @@ async function collect() {
 	if (isValid(price)) {
 		console.log(`Fetched ${count} prices: ${price} (${result})\n`.blue)
 
-		let updateResult = await tryTransaction('update', buckprotocol, 'oracle', { eos_price: price })
+		let updateResult = await tryTransaction('update', contract, 'oracle', { eos_price: price })
 		if (updateResult instanceof Error) {
 			console.log(`Update completely failed: "${updateResult.message}".`.red)
 			return
