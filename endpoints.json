@@ -14,6 +14,13 @@
         ["https://api.binance.com/api/v1/ticker/24hr?symbol=BTCUSDC", "lastPrice"],
         ["https://api.binance.com/api/v1/ticker/24hr?symbol=BTCPAX", "lastPrice"]
     ],
+     
+	"eos": [
+		"https://jungle2.cryptolions.io:443",
+		"https://api.jungle.alohaeos.com:443",
+		"https://jungle.eosn.io:443",
+		"https://eos-jungle.eosblocksmith.io:443"
+	],
 
     "eos_btc": [
         ["https://poloniex.com/public?command=returnTicker", "BTC_EOS/last"],
